@@ -1,0 +1,3 @@
+- algorithm=pets
+- overrides=pets_panda_reacher_cartesian
+- action_optimizer=cem

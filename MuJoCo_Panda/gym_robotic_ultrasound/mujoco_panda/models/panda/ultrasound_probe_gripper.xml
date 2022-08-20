@@ -1,0 +1,23 @@
+<!--
+<mujoco model="ultrasound_probe_gripper">
+
+<body name="gripper_base" pos="-0.004 -0.063 0.128" quat="1 0 0 0">
+  <site name="ft_frame" size="0.01 0.01 0.01" rgba="1 0 0 1" type="sphere" group="1"/>
+  <geom name="probe_collision" mesh="ultrasound_probe_collision" type="mesh" mass="1" friction="0.0001 0.005 0.0001" group="0"/>
+  <geom name="probe_visual" mesh="ultrasound_probe_visual" type="mesh" group="1"/>
+        
+  <site name="grip_site" size="0.01 0.01 0.01" rgba="1 0 0 0.5" type="sphere" group="1"/>
+  <site name="grip_site_cylinder" size="0.005 0.01" rgba="0 1 0 0.3" type="cylinder" group="1"/>
+</body>
+</mujoco>-->
+
+<mujoco>
+<body name="gripper_base" pos="-0.045 -0.042 0.235" euler="0 0 -0.785">
+  <site name="ft_frame" size="0.01 0.01 0.01" rgba="1 0 0 1" type="sphere" group="1"/>
+  <geom name="probe_collision" mesh="ultrasound_probe_collision" type="mesh" mass="1" group="0"/>
+  <geom name="probe_visual" mesh="ultrasound_probe_visual" type="mesh" group="1"/>
+
+  <site name="grip_site" size="0.01 0.01 0.01" rgba="1 0 0 0.5" type="sphere" group="1"/>
+  <site name="grip_site_cylinder" size="0.005 0.01" rgba="0 1 0 0.3" type="cylinder" group="1"/>
+</body>
+</mujoco>

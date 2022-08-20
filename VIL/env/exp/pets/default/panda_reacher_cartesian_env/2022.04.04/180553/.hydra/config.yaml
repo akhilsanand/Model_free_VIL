@@ -1,0 +1,87 @@
+seed: 0
+device: cuda:0
+log_frequency_agent: 1000
+save_video: false
+debug_mode: false
+render: false
+experiment: default
+root_dir: ./exp
+algorithm:
+  name: pets
+  agent:
+    _target_: mbrl.planning.TrajectoryOptimizerAgent
+    action_lb: ${overrides.action_lower_bound}
+    action_ub: ${overrides.action_upper_bound}
+    planning_horizon: ${overrides.planning_horizon}
+    optimizer_cfg: ${action_optimizer}
+    replan_freq: 1
+    verbose: ${debug_mode}
+  normalize: true
+  normalize_double_precision: true
+  target_is_delta: true
+  initial_exploration_steps: ${overrides.trial_length}
+  freq_train_model: ${overrides.freq_train_model}
+  learned_rewards: ${overrides.learned_rewards}
+  num_particles: 20
+dynamics_model:
+  _target_: mbrl.models.GaussianMLP
+  device: ${device}
+  num_layers: ${overrides.num_layers}
+  in_size: ???
+  out_size: ???
+  ensemble_size: 5
+  hid_size: ${overrides.hidden_layer_size}
+  deterministic: false
+  propagation_method: random_model
+  learn_logvar_bounds: false
+  activation_fn_cfg:
+    _target_: torch.nn.SiLU
+overrides:
+  env: panda_reacher_cartesian_env
+  term_fn: no_termination
+  reward_fn: panda_reacher_cartesian
+  uncontrolled_states: true
+  learned_rewards: false
+  trial_length: 10
+  num_steps: 500000
+  controller: VIC
+  publish_rate: 100
+  action_lower_bound:
+  - 0
+  - 0
+  - 0
+  action_upper_bound:
+  - 1
+  - 1
+  - 1
+  num_elites: 5
+  model_lr: 1.0e-05
+  model_wd: 0.0005
+  model_batch_size: 32
+  validation_ratio: 0
+  freq_train_model: 100
+  patience: 25
+  num_epochs_train_model: 25
+  planning_horizon: 5
+  cem_num_iters: 10
+  cem_elite_ratio: 0.1
+  cem_population_size: 1000
+  cem_alpha: 0.1
+  cem_clipped_normal: false
+  hidden_layer_size: 512
+  num_layers: 4
+  load_model: false
+  load_agent: false
+  model_dir: /home/akhil/PhD/RoL/Robotic-mbrl/mbrl-lib/exp/mbpo/default/panda_reacher_cartesian_env/2022.04.01/142346
+  agent_dir: /home/akhil/PhD/RoL/Robotic-mbrl/mbrl-lib/exp/mbpo/default/panda_reacher_cartesian_env/2022.04.01/142346
+action_optimizer:
+  _target_: mbrl.planning.CEMOptimizer
+  num_iterations: ${overrides.cem_num_iters}
+  elite_ratio: ${overrides.cem_elite_ratio}
+  population_size: ${overrides.cem_population_size}
+  alpha: ${overrides.cem_alpha}
+  lower_bound: ???
+  upper_bound: ???
+  return_mean_elites: true
+  device: ${device}
+  clipped_normal: ${overrides.cem_clipped_normal}

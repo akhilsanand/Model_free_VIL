@@ -132,13 +132,14 @@ class PandaPushEnv(gym.Env):
         reward = + 0*x_reward + 0*y_reward
         return reward
 
-    def get_reward_basic(self, achieved_goal, desired_goal, obs, input):
+    def get_reward_basic(self, achieved_goal, desired_goal, obs, input, acc):
         obs_cost = (np.square(100*(desired_goal - achieved_goal)))
         act_cost =1*(np.square(input))
+        acc_cost = np.sum(100 * np.square(acc) )
         # reward = torch.exp(-torch.sum((10*next_obs[:,0:3] ** 2), dim=1))#np.exp(-np.square(next_obs[3]))
         #print(obs_cost, act_cost)
         reward = -(1*obs_cost[0] + 1*obs_cost[1]+ 0*obs_cost[2]+ (10-np.abs(obs[9]))*act_cost[0] +\
-                   (10-np.abs(obs[10]))*act_cost[1] + 0*act_cost[2])
+                   (10-np.abs(obs[10]))*act_cost[1] + 0*act_cost[2] +10*acc_cost)
         return reward
 
     def her_reward(self, achieved_goal, desired_goal, input):
@@ -190,7 +191,7 @@ class PandaPushEnv(gym.Env):
             done = True#(self.iteration >= self.max_num_it)
         else:
             done = False
-        reward = self.get_reward_basic(last_goal, pose, obs,action )
+        reward = self.get_reward_basic(last_goal, pose, obs,action, x_ddot )
         info = {}
         #print(self.robot.get_ft_reading())
         #print("torque ", self.controller._cmd)
@@ -228,7 +229,7 @@ from stable_baselines import DQN, PPO2, A2C, ACKTR, SAC
 from stable_baselines.common.cmd_util import make_vec_env
 if __name__ == "__main__":
     train = False
-    restart = False
+    restart = True
     VIC_env = PandaPushEnv( controller = "VIC") #
 
 
@@ -239,27 +240,72 @@ if __name__ == "__main__":
             model.set_env(env)
         else:
             model = SAC('MlpPolicy', env, verbose=1)#.learn(100000)
-        model.learn(total_timesteps=100000, log_interval=10)
+        model.learn(total_timesteps=1000, log_interval=10)
         model.save('Policies/panda_push/panda_push')
     else:
         VIC_env.set_render(True)
-        env = make_vec_env(lambda: VIC_env, n_envs=1)
+        env = VIC_env#make_vec_env(lambda: VIC_env, n_envs=1)
         obs = env.reset()
-        model = SAC.load('Policies/panda_tray/panda_tray')
+        model = SAC.load('Policies/panda_push/panda_push')
         n_steps = 200
-        for step in range(n_steps):
-            action, _ = model.predict(obs, deterministic=True)
-            print("Step {}".format(step + 1))
-            print("Action: ", action)
-            obs, reward, done, info = env.step(action)
-            print('obs=', obs, 'reward=', reward, 'done=', done)
-        #env.render()
-            if done:
-            # Note that the VecEnv resets automatically
-            # when a done signal is encountered
-                print("Goal reached!", "reward=", reward)
-                break
+        episodes = 100
+        current_trial = 0
+        output_dir = "/home/akhil/PhD/Publications/COnferences/CoRL2022/Figures/SAC_VIL/push/Data"
+        filename = "hold"
+        save = True
+        plot_results = True
+        for i in range(episodes):
+            obs = env.reset()
+            done = False
+            goal = []
+            stiffness = []
+            observations = []
+            acceleration = []
+            cartesian_force = []
+            ext_force = []
+            data = {}
 
+            extra_obs = env.get_extra_obs()
+            g, K = env.get_goal()
+            observations.append(extra_obs['pose'][0:3])
+            goal.append(g)
+            stiffness.append(np.diag(extra_obs['K'])[0:3])
+            # print(np.diag(extra_obs['K'])[0:3])
+            # acceleration.append(extra_obs['acceleration'])
+            cartesian_force.append(extra_obs['cartesian_force'][0:3])
+            ext_force.append(0 * extra_obs['FT'][0:3])
+            while not done:
+                action, _ = model.predict(obs, deterministic=True)
+                # print("Step {}".format(step + 1))
+                # print("Action: ", action)
+                obs, reward, done, info = env.step(action)
+                extra_obs = env.get_extra_obs()
+                # print('obs=', obs, 'reward=', reward, 'done=', done)
+                # env.render()
+                if done:
+                    data['o'] = np.array(observations)
+                    data['g'] = np.array(goal)
+                    data['k'] = np.array(stiffness)
+                    data['f_ext'] = np.array(ext_force)
+                    data['f_cartesian'] = np.array(cartesian_force)
+                    data['acc'] = np.array(acceleration)
+                    filename_trial = filename + '_' + str(current_trial)
+                    if save:
+                        np.save(os.path.join(output_dir, filename_trial), data)
+                    if plot_results:
+                        plot(np.array(observations), np.array(goal), np.array(stiffness), \
+                             np.array(ext_force), np.array(cartesian_force), np.array(acceleration))
+                # Note that the VecEnv resets automatically
+                # when a done signal is encountered
+                else:
+                    observations.append(extra_obs['pose'][0:3])
+                    goal.append(g)
+                    stiffness.append(np.diag(extra_obs['K'])[0:3])
+                    # print(np.diag(extra_obs['K'])[0:3])
+                    acceleration.append(extra_obs['acceleration'])
+                    cartesian_force.append(extra_obs['cartesian_force'][0:3])
+                    ext_force.append(extra_obs['FT'][0:3])
+            current_trial += 1
 
     '''
     curr_ee, curr_ori = VIC_env.robot.ee_pose()

@@ -301,7 +301,7 @@ from stable_baselines import DQN, PPO2, A2C, ACKTR, SAC
 from stable_baselines.common.cmd_util import make_vec_env
 
 if __name__ == "__main__":
-    train = True
+    train = False
     restart = True
     VIC_env = PandaReacherCartesian(controller = "VIC") #
     if train:
@@ -324,7 +324,7 @@ if __name__ == "__main__":
         output_dir = "/home/akhil/PhD/Publications/COnferences/CoRL2022/Figures/SAC_VIL/hold_pose/Data"
         filename = "hold"
         save = True
-        plot_results = False
+        plot_results = True
         for i in range(episodes):
             obs = env.reset()
             done = False

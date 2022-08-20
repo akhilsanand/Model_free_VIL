@@ -58,6 +58,7 @@ class PandaTrayEnv(gym.Env):
         self.x_d_dot = np.zeros(6)
         self.x_d_ddot = np.zeros(6)
         self.action = None
+        self.prev_action = None
         self.f_offset = self.robot.get_ft_reading()[0].copy()
 
         ''''
@@ -135,14 +136,18 @@ class PandaTrayEnv(gym.Env):
         reward = + 0*x_reward + 0*y_reward
         return reward
 
-    def get_reward_basic(self, achieved_goal, desired_goal, obs, input):
+    def get_reward_basic(self, achieved_goal, desired_goal, obs, input, prev_input):
         obs_cost = (np.square(100*(desired_goal - achieved_goal)))
         act_cost =1*(np.square(input))
+        if prev_input is not None:
+            smooth_cost = np.sum(1 * np.square(input - prev_input))
+        else:
+            smooth_cost = 0
         # reward = torch.exp(-torch.sum((10*next_obs[:,0:3] ** 2), dim=1))#np.exp(-np.square(next_obs[3]))
         #print(obs_cost, act_cost)
         reward = -(100*np.abs(obs[6])*obs_cost[0] + 100*np.abs(obs[7])*obs_cost[1] + 100*np.abs(obs[8])*obs_cost[2]+\
                    (100-0*np.abs(obs[9]))*act_cost[0] + (100-0*np.abs(obs[10]))*act_cost[1] + \
-                   (100-np.abs(obs[11]))*act_cost[2])
+                   (100-np.abs(obs[11]))*act_cost[2] + 10 * smooth_cost)
         #reward = -(1*obs_cost + 0*act_cost)
         return reward
 
@@ -225,7 +230,7 @@ class PandaTrayEnv(gym.Env):
             done = True#(self.iteration >= self.max_num_it)
         else:
             done = False
-        reward = self.get_reward_basic(last_goal, pose, obs, action )
+        reward = self.get_reward_basic(last_goal, pose, obs, self.action.copy(), self.prev_action )
         info = {}
         #print(self.robot.get_ft_reading())
         #print("torque ", self.controller._cmd)
@@ -234,6 +239,7 @@ class PandaTrayEnv(gym.Env):
         #print(self.i)
         #print(self.robot.body_pose("object1")[0])
         #print(self.robot._sim.data.qpos)
+        self.prev_action = self.action.copy()
         return obs, reward, done, info
 
     def reset(self):
@@ -283,7 +289,7 @@ from stable_baselines.common.env_checker import check_env
 from stable_baselines import DQN, PPO2, A2C, ACKTR, SAC
 from stable_baselines.common.cmd_util import make_vec_env
 if __name__ == "__main__":
-    train = False
+    train = True
     restart = True
     VIC_env = PandaTrayEnv(controller = "VIC") #
     #VIC_env.set_render(True)
@@ -296,7 +302,7 @@ if __name__ == "__main__":
             model.set_env(env)
         else:
             model = SAC('MlpPolicy', env, verbose=1)#.learn(100000)
-        model.learn(total_timesteps=20000, log_interval=10)
+        model.learn(total_timesteps=2000, log_interval=10)
         model.save('Policies/panda_tray/panda_tray')
     else:
         VIC_env.set_render(False)

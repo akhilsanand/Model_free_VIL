@@ -145,7 +145,7 @@ class PandaReacherCartesian(gym.Env):#(modified_gym.GoalEnv):#
         act_cost =1*(np.square(input))
         # reward = torch.exp(-torch.sum((10*next_obs[:,0:3] ** 2), dim=1))#np.exp(-np.square(next_obs[3]))
         #print(obs_cost, act_cost)
-        reward = -(10*np.abs(obs[6])*obs_cost[0] + 30*np.abs(obs[7])*obs_cost[1] + 10*np.abs(obs[8])*obs_cost[2]+\
+        reward = -(50*np.abs(obs[6])*obs_cost[0] + 50*np.abs(obs[7])*obs_cost[1] + 50*np.abs(obs[8])*obs_cost[2]+\
                    (11-np.abs(obs[9]))*act_cost[0] + (11-np.abs(obs[10]))*act_cost[1] + \
                    (11-np.abs(obs[11]))*act_cost[2])
         #reward = -(1*obs_cost + 0*act_cost)
@@ -301,7 +301,7 @@ from stable_baselines import DQN, PPO2, A2C, ACKTR, SAC
 from stable_baselines.common.cmd_util import make_vec_env
 
 if __name__ == "__main__":
-    train = False
+    train = True
     restart = True
     VIC_env = PandaReacherCartesian(controller = "VIC") #
     if train:
@@ -311,8 +311,8 @@ if __name__ == "__main__":
             model.set_env(env)
         else:
             model = SAC('MlpPolicy', env, verbose=1)#.learn(100000)
-        model.learn(total_timesteps=2000, log_interval=10)
-        model.save('Policies/panda_hold/panda_hold')
+        model.learn(total_timesteps=100000, log_interval=10)
+        model.save('Policies/panda_hold/panda_hold_50pos_11act')
     else:
         VIC_env.set_render(False)
         env = VIC_env#make_vec_env(lambda: VIC_env, n_envs=1)

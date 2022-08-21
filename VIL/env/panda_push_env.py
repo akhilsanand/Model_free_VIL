@@ -111,7 +111,7 @@ class PandaPushEnv(gym.Env):
         return (np.array(self.obs_dict["FT_raw"][0:3].copy()))
 
     def get_external_states(self):
-        return np.concatenate((self.x_d - np.array(self.obs_dict["pose"][0:3].copy()),\
+        return np.concatenate((self.x_d.copy() - np.array(self.obs_dict["pose"][0:3].copy()),\
                                           np.array(self.obs_dict["FT_raw"][0:3].copy())))
 
     def get_obs(self):
@@ -121,7 +121,7 @@ class PandaPushEnv(gym.Env):
         #state = np.concatenate((self.x_d - np.array(self.obs_dict["pose"][0:3].copy()), \
                                     #np.array(self.obs_dict["vel"][0:3].copy()), np.array(self.obs_dict["pose"][0:3].copy()) ))
         state = np.concatenate((np.array(self.obs_dict["pose"][0:3].copy()), np.array(self.obs_dict["vel"][0:3].copy()),
-                                self.x_d - np.array(self.obs_dict["pose"][0:3].copy()), \
+                                self.x_d.copy() - np.array(self.obs_dict["pose"][0:3].copy()), \
                                 np.array(self.obs_dict["FT_raw"][0:3].copy())))
         return state
 
@@ -225,8 +225,27 @@ def make_panda_push_env(env_cfg):
     env = PandaPushEnv(controller=controller,  render=render)
     return env
 
+def plot(traj, goal, k, f_ext, f, acc ):
+    #k =k.astype(int)
+    #print(k)
+    for i in range (12):
+        plt.subplot(4,3,i+1)
+        if i in (0,1,2):
+            plt.plot(100*traj[:, i])
+            plt.plot(100*goal[:, i])
+        elif i  in (3,4,5):
+            plt.plot(k[:, i-3])
+        elif i in (6,7,8):
+            plt.plot(f_ext[:, i-6])
+        elif i in (9,10,11):
+            plt.plot(f[:, i - 9])
+        #else:
+            #plt.plot(acc[:, i - 12])
+    plt.show()
+
 from stable_baselines import DQN, PPO2, A2C, ACKTR, SAC
 from stable_baselines.common.cmd_util import make_vec_env
+
 if __name__ == "__main__":
     train = False
     restart = True
@@ -246,7 +265,7 @@ if __name__ == "__main__":
         VIC_env.set_render(True)
         env = VIC_env#make_vec_env(lambda: VIC_env, n_envs=1)
         obs = env.reset()
-        model = SAC.load('Policies/panda_push/panda_push')
+        model = SAC.load('Policies/panda_push/panda_push_pets_reward')
         n_steps = 200
         episodes = 100
         current_trial = 0

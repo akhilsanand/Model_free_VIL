@@ -146,8 +146,8 @@ class PandaTrayEnv(gym.Env):
         # reward = torch.exp(-torch.sum((10*next_obs[:,0:3] ** 2), dim=1))#np.exp(-np.square(next_obs[3]))
         #print(obs_cost, act_cost)
         reward = -(100*np.abs(obs[6])*obs_cost[0] + 100*np.abs(obs[7])*obs_cost[1] + 100*np.abs(obs[8])*obs_cost[2]+\
-                   (100-0*np.abs(obs[9]))*act_cost[0] + (100-0*np.abs(obs[10]))*act_cost[1] + \
-                   (100-np.abs(obs[11]))*act_cost[2] + 10 * smooth_cost)
+                   (20-0*np.abs(obs[9]))*act_cost[0] + (20-0*np.abs(obs[10]))*act_cost[1] + \
+                   (20-np.abs(obs[11]))*act_cost[2] + 10 * smooth_cost)
         #reward = -(1*obs_cost + 0*act_cost)
         return reward
 
@@ -302,8 +302,8 @@ if __name__ == "__main__":
             model.set_env(env)
         else:
             model = SAC('MlpPolicy', env, verbose=1)#.learn(100000)
-        model.learn(total_timesteps=2000, log_interval=10)
-        model.save('Policies/panda_tray/panda_tray')
+        model.learn(total_timesteps=100000, log_interval=10)
+        model.save('Policies/panda_tray/panda_tray_100pos_20act')
     else:
         VIC_env.set_render(False)
         env = VIC_env#make_vec_env(lambda: VIC_env, n_envs=1)
